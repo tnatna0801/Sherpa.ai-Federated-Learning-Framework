@@ -202,6 +202,7 @@ class LaplaceMechanism(DPDataAccessDefinition):
         query_result = self._query.get(data)
         if isinstance(query_result, (np.ScalarType, np.ndarray)):
             self._sensitivity = np.asarray(self._sensitivity)
+            self._check_sensitivity_shape(self._sensitivity, query_result)
             b = self._sensitivity / self._epsilon
             query_result = np.asarray(self._query.get(data))
             output = query_result + np.random.laplace(loc=0.0, scale=b, size=query_result.shape)
@@ -217,7 +218,6 @@ class LaplaceMechanism(DPDataAccessDefinition):
                 output = {k: (v + np.random.laplace(loc=0.0, scale=b, size=v.shape)) for k, v in
                           query_result.items()}
 
-        self._check_sensitivity_shape(self._sensitivity, query_result)
         return output
 
 
