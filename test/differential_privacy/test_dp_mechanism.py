@@ -299,6 +299,85 @@ def test_laplace_scalar_mechanism():
     assert np.abs(scalar - result) < 100
 
 
+def test_laplace_dictionary_mechanism():
+    dictionary = {0: np.array([[2, 4, 5], [2,3,5]]),
+                  1: np.array([[1, 3, 1], [1,4,6]])}
+
+    node = DataNode()
+    node.set_private_data("dictionary", dictionary)
+    node.configure_data_access("dictionary", LaplaceMechanism(1, 1))
+
+    result = node.query("dictionary")
+
+    assert dictionary.keys() == result.keys()
+    assert np.mean(dictionary[0]) - np.mean(result[0]) < 5
+
+
+def test_laplace_dictionary_sensitivity_mechanism():
+    dictionary = {0: np.array([[2, 4, 5], [2, 3, 5]]),
+                  1: np.array([[1, 3, 1], [1, 4, 6]])}
+
+    sensitivity = {0: np.array([[1, 1, 2], [2, 1, 1]]),
+                   1: np.array([[3, 1, 1], [1, 1, 2]])}
+
+    node = DataNode()
+    node.set_private_data("dictionary", dictionary)
+    dp_access_mechanism = LaplaceMechanism(sensitivity, 1)
+    node.configure_data_access("dictionary", dp_access_mechanism)
+
+    result = node.query("dictionary")
+
+    assert dictionary.keys() == result.keys()
+    assert np.mean(dictionary[0]) - np.mean(result[0]) < 5
+
+
+def test_laplace_dictionary_mechanism_wrong_sensitivity():
+    dictionary = {0: np.array([[2, 4, 5], [2, 3, 5]]),
+                  1: np.array([[1, 3, 1], [1, 4, 6]])}
+
+    sensitivity = {0: np.array([[-1, 1, 2], [2, 1, 1]]),
+                   1: np.array([[3, 1, 1], [1, 1, 2]])}
+
+    node = DataNode()
+    node.set_private_data("dictionary", dictionary)
+
+    with pytest.raises(ValueError):
+        LaplaceMechanism(sensitivity, 1)
+
+
+def test_laplace_dictionary_mechanism_wrong_keys():
+    dictionary = {3: np.array([[2, 4, 5], [2, 3, 5]]),
+                  1: np.array([[1, 3, 1], [1, 4, 6]])}
+
+    sensitivity = {0: np.array([[1, 1, 2], [2, 1, 1]]),
+                   1: np.array([[3, 1, 1], [1, 1, 2]])}
+
+    node = DataNode()
+    node.set_private_data("dictionary", dictionary)
+    dp_access_mechanism = LaplaceMechanism(sensitivity, 1)
+    node.configure_data_access("dictionary", dp_access_mechanism)
+
+    with pytest.raises(ValueError):
+        node.query("dictionary")
+
+
+def test_laplace_dictionary_mechanism_wrong_shapes():
+    dictionary = {0: np.array([2, 3, 5]),
+                  1: np.array([[1, 3, 1], [1, 4, 6]])}
+
+    sensitivity = {0: np.array([[1, 1, 2], [2, 1, 1]]),
+                   1: np.array([3, 1, 11, 1, 2])}
+
+    node = DataNode()
+    node.set_private_data("dictionary", dictionary)
+    dp_access_mechanism = LaplaceMechanism(sensitivity, 1)
+    node.configure_data_access("dictionary", dp_access_mechanism)
+
+    with pytest.raises(ValueError):
+        node.query("dictionary")
+
+
+
 def test_gaussian_mechanism():
     data_size = 1000
     array = NormalDistribution(175, 7).sample(data_size)

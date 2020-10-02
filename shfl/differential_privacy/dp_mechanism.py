@@ -10,7 +10,8 @@ from shfl.private.query import IdentityFunction
 class RandomizedResponseCoins(DPDataAccessDefinition):
     """
     This class uses a simple mechanism to add randomness for binary data. Both the input and output are binary
-    arrays or scalars. This algorithm is described by Cynthia Dwork and Aaron Roth in "The algorithmic Foundations of Differential Privacy".
+    arrays or scalars. This algorithm is described by Cynthia Dwork and Aaron Roth in "The algorithmic Foundations of
+    Differential Privacy".
 
     1.- Flip a coin
 
@@ -190,17 +191,34 @@ class LaplaceMechanism(DPDataAccessDefinition):
         This method applies the laplace mechanism to the given data, to access the data
 
         # Arguments:
-            data: data to be accessed. It can be either a scalar or a numpy array made of scalars.
+            data: data to be accessed. It can be either a scalar, a numpy array made of scalars
+            or a dictionary whose values are arrays.
 
         # Returns:
             Queried data with differential privacy.
         """
-        query_result = np.asarray(self._query.get(data))
-        sensitivity = np.asarray(self._sensitivity)
-        self._check_sensitivity_shape(sensitivity, query_result)
-        b = sensitivity / self._epsilon
 
-        return query_result + np.random.laplace(loc=0.0, scale=b, size=query_result.shape)
+        output = None
+        query_result = self._query.get(data)
+        if isinstance(query_result, (np.ScalarType, np.ndarray)):
+            self._sensitivity = np.asarray(self._sensitivity)
+            b = self._sensitivity / self._epsilon
+            query_result = np.asarray(self._query.get(data))
+            output = query_result + np.random.laplace(loc=0.0, scale=b, size=query_result.shape)
+
+        elif isinstance(query_result, dict):
+            self._check_sensitivity_shape(self._sensitivity, query_result)
+            if isinstance(self._sensitivity, dict):
+                b = {k: v / self._epsilon for k, v in self._sensitivity.items()}
+                output = {k: (v + np.random.laplace(loc=0.0, scale=b[k], size=v.shape)) for k, v in
+                          query_result.items()}
+            else:
+                b = self._sensitivity / self._epsilon
+                output = {k: (v + np.random.laplace(loc=0.0, scale=b, size=v.shape)) for k, v in
+                          query_result.items()}
+
+        self._check_sensitivity_shape(self._sensitivity, query_result)
+        return output
 
 
 class GaussianMechanism(DPDataAccessDefinition):
@@ -211,7 +229,7 @@ class GaussianMechanism(DPDataAccessDefinition):
     Notice that the Gaussian mechanism is a randomization algorithm that depends on the l2-sensitivity,
     which can be regarded as a numeric query. One can show that this mechanism is
     (epsilon, delta)-differentially private where noise is draw from a Gauss Distribution with zero mean
-    and standard deviation equal to sqrt(2 * ln(1,25/delta)) * l2-sensivity / epsilon where epsilon
+    and standard deviation equal to sqrt(2 * ln(1,25/delta)) * l2-sensitivity / epsilon where epsilon
     is in the interval (0, 1)
 
     In order to apply this mechanism, we need to compute
@@ -303,7 +321,7 @@ class ExponentialMechanism(DPDataAccessDefinition):
 
     def apply(self, data):
         """
-        This method applies the exponetial mechanism to the given data, to access the data.
+        This method applies the exponential mechanism to the given data, to access the data.
 
         # Arguments:
             data: data to be accessed. It can be either a scalar or a numpy array made of scalars
