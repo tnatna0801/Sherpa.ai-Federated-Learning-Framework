@@ -340,9 +340,11 @@ def test_laplace_dictionary_mechanism_wrong_sensitivity():
 
     node = DataNode()
     node.set_private_data("dictionary", dictionary)
+    dp_access_mechanism = LaplaceMechanism(sensitivity, 1)
+    node.configure_data_access("dictionary", dp_access_mechanism)
 
     with pytest.raises(ValueError):
-        LaplaceMechanism(sensitivity, 1)
+        node.query("dictionary")
 
 
 def test_laplace_dictionary_mechanism_wrong_keys():
@@ -357,7 +359,7 @@ def test_laplace_dictionary_mechanism_wrong_keys():
     dp_access_mechanism = LaplaceMechanism(sensitivity, 1)
     node.configure_data_access("dictionary", dp_access_mechanism)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(KeyError):
         node.query("dictionary")
 
 
@@ -375,7 +377,6 @@ def test_laplace_dictionary_mechanism_wrong_shapes():
 
     with pytest.raises(ValueError):
         node.query("dictionary")
-
 
 
 def test_gaussian_mechanism():

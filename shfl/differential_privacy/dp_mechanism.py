@@ -2,6 +2,7 @@ import numpy as np
 import scipy
 from math import sqrt
 from math import log
+import copy
 
 from shfl.private.data import DPDataAccessDefinition
 from shfl.private.query import IdentityFunction
@@ -66,7 +67,7 @@ class RandomizedResponseCoins(DPDataAccessDefinition):
             p=self._prob_head_second, size=data.shape)
 
         result = data * first_coin_flip + \
-            (1 - first_coin_flip) * second_coin_flip
+                 (1 - first_coin_flip) * second_coin_flip
 
         return result
 
@@ -176,7 +177,6 @@ class LaplaceMechanism(DPDataAccessDefinition):
             query = IdentityFunction()
 
         self._check_epsilon_delta((epsilon, 0))
-        self._check_sensitivity_positive(sensitivity)
 
         self._sensitivity = sensitivity
         self._epsilon = epsilon
@@ -185,6 +185,34 @@ class LaplaceMechanism(DPDataAccessDefinition):
     @property
     def epsilon_delta(self):
         return self._epsilon, 0
+
+    @staticmethod
+    def _seq_iter(obj):
+        return obj if isinstance(obj, dict) else range(len(obj))
+
+    @staticmethod
+    def _pick_sensitivity(sensitivity, i):
+        try:
+            return sensitivity[i] if isinstance(sensitivity, (dict, list)) else sensitivity
+        except KeyError:
+            raise KeyError("The sensitivity does not contain the key {}".format(i))
+
+    def _add_noise(self, obj, sensitivity):
+        if isinstance(obj, (np.ScalarType, np.ndarray)):
+            sensitivity = np.asarray(sensitivity)
+            obj = np.asarray(obj)
+            self._check_sensitivity_positive(np.asarray(sensitivity))
+            self._check_sensitivity_shape(sensitivity, obj)
+            b = sensitivity / self._epsilon
+            output = obj + np.random.laplace(loc=0.0, scale=b, size=obj.shape)
+            return output
+
+        elif isinstance(obj, (dict, list)):
+            output = copy.deepcopy(obj)
+            for i in self._seq_iter(obj):
+                sensitivity_tmp = self._pick_sensitivity(sensitivity, i)
+                output[i] = self._add_noise(obj[i], sensitivity_tmp)
+            return output
 
     def apply(self, data):
         """
@@ -198,27 +226,8 @@ class LaplaceMechanism(DPDataAccessDefinition):
             Queried data with differential privacy.
         """
 
-        output = None
         query_result = self._query.get(data)
-        if isinstance(query_result, (np.ScalarType, np.ndarray)):
-            self._sensitivity = np.asarray(self._sensitivity)
-            self._check_sensitivity_shape(self._sensitivity, query_result)
-            b = self._sensitivity / self._epsilon
-            query_result = np.asarray(self._query.get(data))
-            output = query_result + np.random.laplace(loc=0.0, scale=b, size=query_result.shape)
-
-        elif isinstance(query_result, dict):
-            self._check_sensitivity_shape(self._sensitivity, query_result)
-            if isinstance(self._sensitivity, dict):
-                b = {k: v / self._epsilon for k, v in self._sensitivity.items()}
-                output = {k: (v + np.random.laplace(loc=0.0, scale=b[k], size=v.shape)) for k, v in
-                          query_result.items()}
-            else:
-                b = self._sensitivity / self._epsilon
-                output = {k: (v + np.random.laplace(loc=0.0, scale=b, size=v.shape)) for k, v in
-                          query_result.items()}
-
-        return output
+        return self._add_noise(query_result, self._sensitivity)
 
 
 class GaussianMechanism(DPDataAccessDefinition):
@@ -256,7 +265,7 @@ class GaussianMechanism(DPDataAccessDefinition):
     def __init__(self, sensitivity, epsilon_delta, query=None):
         if query is None:
             query = IdentityFunction()
-            
+
         self._check_epsilon_delta(epsilon_delta)
         if epsilon_delta[0] >= 1:
             raise ValueError(
@@ -284,7 +293,7 @@ class GaussianMechanism(DPDataAccessDefinition):
         sensitivity = np.asarray(self._sensitivity)
         self._check_sensitivity_shape(sensitivity, query_result)
         std = sqrt(2 * np.log(1.25 / self._epsilon_delta[1])) * \
-            sensitivity / self._epsilon_delta[0]
+              sensitivity / self._epsilon_delta[0]
 
         return query_result + np.random.normal(loc=0.0, scale=std, size=query_result.shape)
 

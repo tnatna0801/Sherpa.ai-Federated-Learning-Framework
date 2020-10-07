@@ -108,11 +108,6 @@ class DPDataAccessDefinition(DataAccessDefinition):
             if (sensitivity < 0).any():
                 raise ValueError(
                     "Sensitivity of the query cannot be negative")
-        elif isinstance(sensitivity, dict):
-            for v in sensitivity.values():
-                if (v < 0).any():
-                    raise ValueError(
-                        "Sensitivity of the query cannot be negative")
 
     @staticmethod
     def _check_sensitivity_shape(sensitivity, query_result):
@@ -125,21 +120,13 @@ class DPDataAccessDefinition(DataAccessDefinition):
 
         If the check fails, it throws an ValueError exception with the appropriate message
         """
-        if isinstance(query_result, (np.ScalarType, np.ndarray)):
-            if sensitivity.size > 1:
-                if sensitivity.size > query_result.size:
-                    raise ValueError(
-                        "Provided more sensitivity values than query outputs")
-                if not all((m == n) for m, n in zip(sensitivity.shape[::-1], query_result.shape[::-1])):
-                    raise ValueError("Sensitivity array dimension " + str(sensitivity.shape) +
-                                     " cannot be broadcast to query result dimension " + str(query_result.shape))
-        elif isinstance(query_result, dict) and isinstance(sensitivity, dict):
-            if not set(query_result.keys()).issubset(set(sensitivity.keys())):
-                raise ValueError("Query result has keys not present in sensitivity.")
-            else:
-                for k in query_result.keys():
-                    if query_result[k].shape != sensitivity[k].shape:
-                        raise ValueError("The values in sensitivity and query result have different dimensions.")
+        if sensitivity.size > 1:
+            if sensitivity.size > query_result.size:
+                raise ValueError(
+                    "Provided more sensitivity values than query outputs")
+            if not all((m == n) for m, n in zip(sensitivity.shape[::-1], query_result.shape[::-1])):
+                raise ValueError("Sensitivity array dimension " + str(sensitivity.shape) +
+                                 " cannot be broadcast to query result dimension " + str(query_result.shape))
 
     @property
     @abc.abstractmethod
