@@ -33,6 +33,10 @@ class FederatedDataNode(DataNode):
         super().__init__()
         self._federated_data_identifier = federated_data_identifier
 
+    @property
+    def federated_data_identifier(self):
+        return self._federated_data_identifier
+
     def query(self, private_property=None, **kwargs):
         """
         Queries private data previously configured. If the access didn't configured this method will raise exception
@@ -135,14 +139,16 @@ class FederatedData:
     def __iter__(self):
         return iter(self._data_nodes)
 
-    def add_data_node(self, data):
+    def add_data_node(self, data, identifier=None):
         """
         This method adds a new node containing data to the federated data
 
         # Arguments:
             data: Data to add to this node
         """
-        node = FederatedDataNode(str(id(self)))
+        if identifier is None:
+            identifier = str(id(self))
+        node = FederatedDataNode(identifier)
         node.set_private_data(data)
         self._data_nodes.append(node)
 

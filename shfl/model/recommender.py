@@ -4,36 +4,6 @@ import numpy as np
 from shfl.model.model import TrainableModel
 
 
-def _check_data(data):
-    """
-    Method that checks if the data corresponds to a single user
-
-    # Arguments:
-        data: array with data
-    """
-    number_of_clients = len(np.unique(data[:, 0]))
-
-    if number_of_clients > 1:
-        raise AssertionError("Data need to correspond to a single user. "
-                             "Current data includes {} clients".format(number_of_clients))
-
-
-def _check_data_labels(data, labels):
-    """
-    Method that checks if the data and the labels have matching dimensions
-
-    # Arguments:
-        data: array with data
-    """
-    rows_in_data = data.shape[0]
-    number_of_labels = len(labels)
-
-    if rows_in_data != number_of_labels:
-        raise AssertionError("Data and labels do not have matching dimensions. "
-                             "Current data has {} rows and there are {} labels".format(rows_in_data,
-                                                                                       number_of_labels))
-
-
 class Recommender(TrainableModel):
     """
     Abstract class for recommender systems using \
@@ -45,7 +15,44 @@ class Recommender(TrainableModel):
     """
 
     def __init__(self):
-        self._clientId = None
+        super().__init__()
+        self._client_id = None
+
+    @staticmethod
+    def _check_data(data):
+        """
+        Method that checks if the data corresponds to a single user
+
+        # Arguments:
+            data: array with data
+        """
+        number_of_clients = len(np.unique(data[:, 0]))
+
+        if number_of_clients > 1:
+            raise AssertionError("Data need to correspond to a single user. "
+                                 "Current data includes {} clients".format(number_of_clients))
+
+    @staticmethod
+    def _check_data_labels(data, labels):
+        """
+        Method that checks if the data and the labels have matching dimensions
+
+        # Arguments:
+            data: array with data
+        """
+        rows_in_data = data.shape[0]
+        number_of_labels = len(labels)
+
+        if rows_in_data != number_of_labels:
+            raise AssertionError("Data and labels do not have matching dimensions. "
+                                 "Current data has {} rows and there are {} labels".format(rows_in_data,
+                                                                                           number_of_labels))
+
+    def _restrict_data(self, data):
+        return data[data[:, 0] == self._client_id]
+
+    def _restrict_labels(self, data, labels):
+        return labels[data[:, 0] == self._client_id]
 
     def train(self, data, labels):
         """
@@ -55,9 +62,12 @@ class Recommender(TrainableModel):
             data: Data to train the model
             labels: Label for each train element
         """
-        _check_data(data)
-        _check_data_labels(data, labels)
-        self._clientId = data[0, 0]
+        self._client_id = data[0, 0]
+        # data_client = self._restrict_data(data)
+        # labels_client = self._restrict_labels(data, labels)
+        self._check_data(data)
+        self._check_data_labels(data, labels)
+
         self.train_recommender(data, labels)
 
     @abc.abstractmethod
@@ -80,7 +90,8 @@ class Recommender(TrainableModel):
         # Returns:
             predictions: Matrix with predictions for data
         """
-        _check_data(data)
+        # data_client = self._restrict_data(data)
+        self._check_data(data)
         return self.predict_recommender(data)
 
     @abc.abstractmethod
@@ -104,8 +115,10 @@ class Recommender(TrainableModel):
             data: Data to be evaluated. Only includes the data of this client
             labels: True values of data
         """
-        _check_data(data)
-        _check_data_labels(data, labels)
+        # data_client = self._restrict_data(data)
+        # labels_client = self._restrict_labels(data, labels)
+        self._check_data(data)
+        self._check_data_labels(data, labels)
         return self.evaluate_recommender(data, labels)
 
     @abc.abstractmethod
@@ -145,8 +158,10 @@ class Recommender(TrainableModel):
             data: Data to be evaluated. Only includes the data of this client
             labels: True values of data
         """
-        _check_data(data)
-        _check_data_labels(data, labels)
+        # data_client = self._restrict_data(data)
+        # labels_client = self._restrict_labels(data, labels)
+        self._check_data(data)
+        self._check_data_labels(data, labels)
         return self.performance_recommender(data, labels)
 
     @abc.abstractmethod

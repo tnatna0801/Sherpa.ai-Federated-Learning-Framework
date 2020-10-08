@@ -1,6 +1,7 @@
 import numpy as np
 
 from shfl.data_distribution.data_distribution import DataDistribution
+from shfl.private import LabeledData, FederatedData
 
 
 class ExplicitDataDistribution(DataDistribution):
@@ -10,6 +11,34 @@ class ExplicitDataDistribution(DataDistribution):
 
     In this data distribution we assume that the first column in the data determines the node it belongs to.
     """
+
+    def get_federated_data(self, percent=100, *args, **kwargs):
+        """
+        Method that splits the whole data between the established number of nodes.
+
+        # Arguments:
+            num_nodes: Number of nodes to create
+            percent: Percent of the data (between 0 and 100) to be distributed (default is 100)
+
+        # Returns:
+              * **federated_data, test_data, test_label**
+        """
+
+        train_data, train_label = self._database.train
+        test_data, test_label = self._database.test
+
+        federated_train_data, federated_train_label = self.make_data_federated(train_data,
+                                                                               train_label,
+                                                                               percent,
+                                                                               *args, **kwargs)
+
+        federated_data = FederatedData()
+        num_nodes = len(federated_train_label)
+        for node in range(num_nodes):
+            node_data = LabeledData(federated_train_data[node], federated_train_label[node])
+            federated_data.add_data_node(node_data, federated_train_data[node][0, 0])
+
+        return federated_data, test_data, test_label
 
     def make_data_federated(self, data, labels, percent, *args, **kwargs):
         """

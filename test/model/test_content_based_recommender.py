@@ -13,7 +13,7 @@ def test_content_based_recommender():
     content_based_recommender = ContentBasedRecommender(df_items)
     df_items.index.name = "itemid"
 
-    assert content_based_recommender._clientId is None
+    assert content_based_recommender._client_id is None
     assert content_based_recommender._mu is None
     assert content_based_recommender._profile is None
     pd.testing.assert_frame_equal(content_based_recommender._df_items, df_items)
@@ -45,7 +45,7 @@ def test_train():
     df_data = pd.DataFrame(data, columns=["userid", "itemid"])
     df = df_data.join(df_items, on="itemid").drop(["userid", "itemid"], axis=1)
 
-    assert content_based_recommender._clientId == data[0, 0]
+    assert content_based_recommender._client_id == data[0, 0]
     assert content_based_recommender._mu == np.mean(labels)
     np.testing.assert_equal(content_based_recommender._profile,
                             df.multiply(labels - np.mean(labels), axis=0).mean().values)

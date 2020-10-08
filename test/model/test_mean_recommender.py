@@ -7,7 +7,7 @@ from shfl.model.mean_recommender import MeanRecommender
 def test_mean_recommender():
     mean_recommender = MeanRecommender()
 
-    assert mean_recommender._clientId is None
+    assert mean_recommender._client_id is None
 
 
 def test_train():
@@ -21,7 +21,7 @@ def test_train():
     mean_recommender = MeanRecommender()
     mean_recommender.train(data, labels)
 
-    assert mean_recommender._clientId == data[0, 0]
+    assert mean_recommender._client_id == data[0, 0]
     assert mean_recommender._mu == np.mean(labels)
 
 

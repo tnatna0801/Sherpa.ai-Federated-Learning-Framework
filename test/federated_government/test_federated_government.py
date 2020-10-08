@@ -18,7 +18,7 @@ class TestFederatedGovernment(FederatedGovernment):
     def aggregate_weights(self):
         pass
 
-    def run_rounds(self, n, test_data, test_label):
+    def run_rounds(self, test_data, test_label, n=1, *args, **kwargs):
         pass
 
 
@@ -152,9 +152,7 @@ def test_aggregate_weights():
     weights = np.random.rand(64, 32)
     fdg._aggregator.aggregate_weights.return_value = weights
 
-    fdg.aggregate_weights()
-
-    fdg._model.set_model_params.assert_called_once_with(weights)
+    np.testing.assert_array_equal(fdg.aggregate_weights(), weights)
 
 
 def test_federated_government_private_data():
@@ -172,6 +170,7 @@ def test_federated_government_private_data():
 
     assert isinstance(la.global_model, model_builder)
     assert aggregator.id == la._aggregator.id
+
 
 def test_run_rounds():
     model_builder = Mock
@@ -191,7 +190,7 @@ def test_run_rounds():
     fdg.aggregate_weights = Mock()
     fdg.evaluate_global_model = Mock()
 
-    fdg.run_rounds(1, test_data, test_labels)
+    fdg.run_rounds(test_data, test_labels, 1)
 
     fdg.deploy_central_model.assert_called_once()
     fdg.train_all_clients.assert_called_once()
@@ -220,7 +219,7 @@ def test_run_rounds_local_tests():
     fdg.aggregate_weights = Mock()
     fdg.evaluate_global_model = Mock()
 
-    fdg.run_rounds(1, test_data, test_labels)
+    fdg.run_rounds(test_data, test_labels, 1)
 
     fdg.deploy_central_model.assert_called_once()
     fdg.train_all_clients.assert_called_once()
