@@ -46,6 +46,7 @@ class SimpleFederatedRecommender(FederatedRecommender):
             squared_error += eva_tmp ** 2 * len(data_test[data_test[:, 0] == client])
         rmse = np.sqrt(squared_error / num_test)
         print("RMSE in the test set: {:.2f}".format(rmse))
+        return rmse
 
     def run_rounds(self, test_data, test_label):
         """

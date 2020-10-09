@@ -48,12 +48,6 @@ class Recommender(TrainableModel):
                                  "Current data has {} rows and there are {} labels".format(rows_in_data,
                                                                                            number_of_labels))
 
-    def _restrict_data(self, data):
-        return data[data[:, 0] == self._client_id]
-
-    def _restrict_labels(self, data, labels):
-        return labels[data[:, 0] == self._client_id]
-
     def train(self, data, labels):
         """
         Method that trains the model. This method checks that the data belongs to a single client.
@@ -63,8 +57,6 @@ class Recommender(TrainableModel):
             labels: Label for each train element
         """
         self._client_id = data[0, 0]
-        # data_client = self._restrict_data(data)
-        # labels_client = self._restrict_labels(data, labels)
         self._check_data(data)
         self._check_data_labels(data, labels)
 
@@ -90,7 +82,6 @@ class Recommender(TrainableModel):
         # Returns:
             predictions: Matrix with predictions for data
         """
-        # data_client = self._restrict_data(data)
         self._check_data(data)
         return self.predict_recommender(data)
 
@@ -115,8 +106,6 @@ class Recommender(TrainableModel):
             data: Data to be evaluated. Only includes the data of this client
             labels: True values of data
         """
-        # data_client = self._restrict_data(data)
-        # labels_client = self._restrict_labels(data, labels)
         self._check_data(data)
         self._check_data_labels(data, labels)
         return self.evaluate_recommender(data, labels)
@@ -158,8 +147,6 @@ class Recommender(TrainableModel):
             data: Data to be evaluated. Only includes the data of this client
             labels: True values of data
         """
-        # data_client = self._restrict_data(data)
-        # labels_client = self._restrict_labels(data, labels)
         self._check_data(data)
         self._check_data_labels(data, labels)
         return self.performance_recommender(data, labels)

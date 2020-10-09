@@ -2,6 +2,7 @@ import numpy as np
 
 from shfl.data_base.data_base import DataBase
 from shfl.data_distribution.data_distribution_explicit import ExplicitDataDistribution
+from shfl.private import UnprotectedAccess
 
 
 class TestDataBase(DataBase):
@@ -44,3 +45,20 @@ def test_make_data_federated():
     assert len(federated_data) == len(np.unique(train_data[:, 0]))
     assert (np.sort(all_data.ravel()) == np.sort(train_data[idx, ].ravel())).all()
     assert (np.sort(all_label, 0) == np.sort(train_label[idx], 0)).all()
+
+
+def test_get_data_federated():
+    data = TestDataBase()
+    data.load_data()
+    data_distribution = ExplicitDataDistribution(data)
+
+    federated_data, test_data, test_label = data_distribution.get_federated_data()
+
+    data_access_definition = UnprotectedAccess()
+    federated_data.configure_data_access(data_access_definition)
+    group_query = federated_data.query()
+
+    for i in range(len(group_query)):
+        identifier = federated_data[i].federated_data_identifier
+        identifier_data = group_query[i].data[0, 0]
+        assert identifier == identifier_data

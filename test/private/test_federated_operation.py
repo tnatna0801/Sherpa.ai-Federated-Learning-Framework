@@ -117,3 +117,10 @@ def test_evaluate(mock_super_local_evaluate, mock_super_evaluate):
     mock_super_local_evaluate.assert_called_once_with(identifier)
 
 
+def test_get_identifier():
+    data = np.random.rand(15)
+    test = np.random.rand(5)
+
+    identifier = 'id'
+    fdn = FederatedDataNode(identifier)
+    assert fdn.federated_data_identifier == identifier

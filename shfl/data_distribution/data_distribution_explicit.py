@@ -15,6 +15,7 @@ class ExplicitDataDistribution(DataDistribution):
     def get_federated_data(self, percent=100, *args, **kwargs):
         """
         Method that splits the whole data between the established number of nodes.
+        It assigns the client Id of the data as the FederatedDataNode identifier.
 
         # Arguments:
             num_nodes: Number of nodes to create
