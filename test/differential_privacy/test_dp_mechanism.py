@@ -298,6 +298,105 @@ def test_laplace_scalar_mechanism():
     assert scalar != result
     assert np.abs(scalar - result) < 100
 
+    
+def test_laplace_mechanism_list_of_arrays():
+    n_nodes = 15
+    data = [[np.random.rand(3,2), np.random.rand(2,3)] 
+            for node in range(n_nodes)]
+    
+    federated_list = shfl.private.federated_operation.FederatedData()
+    for node in range(n_nodes):
+        federated_list.add_data_node(data[node])
+        
+    federated_list.configure_data_access(
+        LaplaceMechanism(sensitivity=0.01, epsilon=1))
+    result = federated_list.query()
+    for i_node in range(n_nodes):
+        for i_list in range(len(data[i_node])):
+            assert (data[i_node][i_list] != result[i_node][i_list]).all()
+            assert np.abs(np.mean(data[i_node][i_list]) - 
+                          np.mean(result[i_node][i_list])) < 1
+    
+
+def test_laplace_dictionary_mechanism():
+    dictionary = {0: np.array([[2, 4, 5], [2,3,5]]),
+                  1: np.array([[1, 3, 1], [1,4,6]])}
+
+    node = DataNode()
+    node.set_private_data("dictionary", dictionary)
+    node.configure_data_access("dictionary", LaplaceMechanism(1, 1))
+
+    result = node.query("dictionary")
+
+    assert dictionary.keys() == result.keys()
+    assert np.mean(dictionary[0]) - np.mean(result[0]) < 5
+
+
+def test_laplace_dictionary_sensitivity_mechanism():
+    dictionary = {0: np.array([[2, 4, 5], [2, 3, 5]]),
+                  1: np.array([[1, 3, 1], [1, 4, 6]])}
+
+    sensitivity = {0: np.array([[1, 1, 2], [2, 1, 1]]),
+                   1: np.array([[3, 1, 1], [1, 1, 2]])}
+
+    node = DataNode()
+    node.set_private_data("dictionary", dictionary)
+    dp_access_mechanism = LaplaceMechanism(sensitivity, 1)
+    node.configure_data_access("dictionary", dp_access_mechanism)
+
+    result = node.query("dictionary")
+
+    assert dictionary.keys() == result.keys()
+    assert np.mean(dictionary[0]) - np.mean(result[0]) < 5
+
+
+def test_laplace_dictionary_mechanism_wrong_sensitivity():
+    dictionary = {0: np.array([[2, 4, 5], [2, 3, 5]]),
+                  1: np.array([[1, 3, 1], [1, 4, 6]])}
+
+    sensitivity = {0: np.array([[-1, 1, 2], [2, 1, 1]]),
+                   1: np.array([[3, 1, 1], [1, 1, 2]])}
+
+    node = DataNode()
+    node.set_private_data("dictionary", dictionary)
+    dp_access_mechanism = LaplaceMechanism(sensitivity, 1)
+    node.configure_data_access("dictionary", dp_access_mechanism)
+
+    with pytest.raises(ValueError):
+        node.query("dictionary")
+
+
+def test_laplace_dictionary_mechanism_wrong_keys():
+    dictionary = {3: np.array([[2, 4, 5], [2, 3, 5]]),
+                  1: np.array([[1, 3, 1], [1, 4, 6]])}
+
+    sensitivity = {0: np.array([[1, 1, 2], [2, 1, 1]]),
+                   1: np.array([[3, 1, 1], [1, 1, 2]])}
+
+    node = DataNode()
+    node.set_private_data("dictionary", dictionary)
+    dp_access_mechanism = LaplaceMechanism(sensitivity, 1)
+    node.configure_data_access("dictionary", dp_access_mechanism)
+
+    with pytest.raises(KeyError):
+        node.query("dictionary")
+
+
+def test_laplace_dictionary_mechanism_wrong_shapes():
+    dictionary = {0: np.array([2, 3, 5]),
+                  1: np.array([[1, 3, 1], [1, 4, 6]])}
+
+    sensitivity = {0: np.array([[1, 1, 2], [2, 1, 1]]),
+                   1: np.array([3, 1, 11, 1, 2])}
+
+    node = DataNode()
+    node.set_private_data("dictionary", dictionary)
+    dp_access_mechanism = LaplaceMechanism(sensitivity, 1)
+    node.configure_data_access("dictionary", dp_access_mechanism)
+
+    with pytest.raises(ValueError):
+        node.query("dictionary")
+
 
 def test_laplace_dictionary_mechanism():
     dictionary = {0: np.array([[2, 4, 5], [2,3,5]]),
@@ -434,8 +533,8 @@ def test_exponential_mechanism_pricing():
     min_price = x_bin[np.where(y_bin == y_bin.min())]
     bin_size = x_bin[1] - x_bin[0]
     assert (1.00 - x_bin[np.where(y_bin == max_price)] > bin_size).all()       # Check the best price is close to 1.00
-    assert ((x_bin[np.where(y_bin == min_price)] > (3.01 - bin_size)).all()    # Check the no-revenue price is either greater than 3.01
-            or x_bin[np.where(y_bin == min_price)][0] < bin_size )             # or close to 0.00                 
+    assert ((x_bin[np.where(y_bin == min_price)] > (3.01 - bin_size)).all()    # Check the no-revenue price is either
+            or x_bin[np.where(y_bin == min_price)][0] < bin_size )             # greater than 3.01 or close to 0.00
      
     
 def test_exponential_mechanism_obtain_laplace():
@@ -524,7 +623,8 @@ def test_sensitivity_wrong_input():
     with pytest.raises(ValueError):
          result = node.query("data_ndarray")
             
-    # Both query result and sensitivity are ND-arrays, but non-broadcastable (they should have the same shape in this case):
+    # Both query result and sensitivity are ND-arrays, but non-broadcastable (they should have the same shape
+    # in this case):
     data_ndarray = [[10 , 10, 10, 10], [10 , 10, 10, 10], [10 , 10, 10, 10]]
     sensitivity = [[0.1, 10, 100, 1000, 10000], [0.1, 10, 100, 1000, 10000], [0.1, 10, 100, 1000, 10000]]
     node = DataNode()
@@ -532,3 +632,30 @@ def test_sensitivity_wrong_input():
     node.configure_data_access("data_ndarray", GaussianMechanism(sensitivity=sensitivity, epsilon_delta=epsilon_delta))
     with pytest.raises(ValueError):
          result = node.query("data_ndarray")
+
+    # Query result is a list of arrays: sensitivity must be either a scalar, or a list of the same length as query
+    data_list = [np.random.rand(30, 20),
+                 np.random.rand(20, 30),
+                 np.random.rand(50, 40)]
+    sensitivity = np.array([1, 1]) # Array instead of scalar
+    node = DataNode()
+    node.set_private_data("data_list", data_list)
+    node.configure_data_access("data_list", LaplaceMechanism(sensitivity=sensitivity, epsilon=1))
+    with pytest.raises(ValueError):
+        result = node.query("data_list")
+
+    sensitivity = [1, 1] # List of wrong length
+    node = DataNode()
+    node.set_private_data("data_list", data_ndarray)
+    node.configure_data_access("data_list", LaplaceMechanism(sensitivity=sensitivity, epsilon=1))
+    with pytest.raises(IndexError):
+        result = node.query("data_list")
+
+    # Query result is wrong data structure: so far, tuples are not allowed
+    data_tuple = (1, 2, 3, 4, 5)
+    sensitivity = 2
+    node = DataNode()
+    node.set_private_data("data_tuple", data_tuple)
+    node.configure_data_access("data_tuple", LaplaceMechanism(sensitivity=sensitivity, epsilon=1))
+    with pytest.raises(NotImplementedError):
+        result = node.query("data_tuple")

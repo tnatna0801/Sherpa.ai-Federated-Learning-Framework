@@ -1,6 +1,8 @@
 import numpy as np
 from scipy import special
 from math import pow
+from multipledispatch import dispatch
+from multipledispatch.variadic import Variadic
 
 
 class SensitivitySampler:
@@ -14,6 +16,7 @@ class SensitivitySampler:
         - [Pain-Free Random Differential Privacy with Sensitivity Sampling](
            https://arxiv.org/pdf/1706.02562.pdf)
     """
+
     def sample_sensitivity(self, query, sensitivity_norm, oracle, n, m=None, gamma=None):
         """
         This method calculates the parameters to sample the oracle and estimates the sensitivity.
@@ -60,17 +63,38 @@ class SensitivitySampler:
         # Returns:
             a tuple with the sampled sensitivity and the mean of the sampled sensitivities
         """
-        gs = np.ones(m) * np.inf
+        gs = [np.inf for i in range(m)]
 
         for i in range(0, m):
-            db1 = oracle.sample(n-1)
+            db1 = oracle.sample(n - 1)
             db2 = db1
             db1 = np.concatenate((db1, oracle.sample(1)))
             db2 = np.concatenate((db2, oracle.sample(1)))
             gs[i] = self._sensitivity_norm(query, sensitivity_norm, db1, db2)
 
-        gs = np.sort(gs)
-        return gs[k - 1], np.mean(gs)
+        return self._sort_sensitivity(*gs, k=k)
+
+    @dispatch(Variadic[(np.ndarray, list)])
+    def _sort_sensitivity(self, *gs, k):
+        """
+        Sort sensitivity. Items to sort are iterables:
+        either ndarrays or lists of ndarrays.
+        """
+        gs_sorted = [np.sort(np.array(item), axis=0) for item in zip(*gs)]
+        gs_max = [item[k - 1] for item in gs_sorted]
+        gs_mean = [np.mean(item, axis=0) for item in gs_sorted]
+
+        return gs_max, gs_mean
+
+    @dispatch(Variadic[np.ScalarType])
+    def _sort_sensitivity(self, *gs, k):
+        """
+        Sort sensitivity. Items to sort are scalars.
+        """
+        gs = [[item] for item in gs]
+        [gs_max], [gs_mean] = self._sort_sensitivity(*gs, k=k)
+
+        return gs_max, gs_mean
 
     @staticmethod
     def _sensitivity_norm(query, sensitivity_norm, x1, x2):

@@ -1,7 +1,6 @@
 from unittest.mock import Mock
 
 import numpy as np
-import pytest
 
 from shfl.data_base.data_base import DataBase
 from shfl.data_distribution.data_distribution_iid import IidDataDistribution

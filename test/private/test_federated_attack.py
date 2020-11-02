@@ -1,8 +1,5 @@
 import numpy as np
-import pytest
-import random
 
-import shfl.private.federated_attack
 from shfl.private.federated_operation import FederatedData
 from shfl.private.data import LabeledData
 from shfl.private.federated_attack import ShuffleNode

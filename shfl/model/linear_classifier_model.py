@@ -27,7 +27,7 @@ class LinearClassifierModel(TrainableModel):
         n_classes = len(classes)
         if n_classes == 2:
             n_classes = 1
-        self.set_model_params(np.zeros((n_classes, n_features + 1)))
+        self.set_model_params([np.zeros(n_classes), np.zeros((n_classes, n_features))])
         
     def train(self, data, labels):
         """
@@ -91,14 +91,15 @@ class LinearClassifierModel(TrainableModel):
         Implementation of abstract method of class [TrainableModel](../Model/#trainablemodel-class)
         """
         
-        return np.column_stack((self._model.intercept_, self._model.coef_))
+        return [self._model.intercept_, self._model.coef_]
 
     def set_model_params(self, params):
         """
         Implementation of abstract method of class [TrainableModel](../Model/#trainablemodel-class)
         """
-        self._model.intercept_ = params[:,0]
-        self._model.coef_ = params[:, 1:]
+        
+        self._model.intercept_ = params[0]
+        self._model.coef_ = params[1]
 
     def _check_data(self, data):
         """

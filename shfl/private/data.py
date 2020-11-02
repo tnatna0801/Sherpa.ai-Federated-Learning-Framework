@@ -126,8 +126,9 @@ class DPDataAccessDefinition(DataAccessDefinition):
                     "Provided more sensitivity values than query outputs")
             if not all((m == n) for m, n in zip(sensitivity.shape[::-1], query_result.shape[::-1])):
                 raise ValueError("Sensitivity array dimension " + str(sensitivity.shape) +
-                                 " cannot be broadcast to query result dimension " + str(query_result.shape))
-
+                                 " cannot broadcast to query result dimension " +
+                                 str(query_result.shape))
+    
     @property
     @abc.abstractmethod
     def epsilon_delta(self):

@@ -54,6 +54,6 @@ class DataDistribution(abc.ABC):
             percent: Percent of the data (between 0 and 100) to be distributed (default is 100)
 
         # Returns:
-            federated_data: Data for each client
-            federated_label: Labels for each client
+            federated_data: A list containing the data for each client
+            federated_label: A list containing the labels for each client
         """

@@ -32,6 +32,7 @@ def test_FederatedClustering():
     assert isinstance(cfg._model, KMeansModel)
     assert cfg._federated_data is not None
 
+
 def test_FederatedClustering_wrong_database():
     cfg = FederatedClustering('MNIST', iid=True, num_nodes=3, percent=20)
 

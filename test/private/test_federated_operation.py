@@ -1,7 +1,8 @@
 import numpy as np
+import pandas as pd
 import pytest
 from keras.utils import to_categorical
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import shfl.private.federated_operation
 from shfl.private.federated_operation import FederatedTransformation
@@ -80,6 +81,26 @@ def test_split_train_test():
     num_nodes = 10
     data = np.random.rand(10,num_nodes)
     label = np.random.randint(range(0, 10), num_nodes)
+
+    federated_data = FederatedData()
+    for idx in range(num_nodes):
+        federated_data.add_data_node(LabeledData(data[idx], to_categorical(label[idx])))
+
+    federated_data.configure_data_access(UnprotectedAccess())
+    raw_federated_data = federated_data
+
+    shfl.private.federated_operation.split_train_test(federated_data)
+
+    for raw_node, split_node in zip(raw_federated_data, federated_data):
+        raw_node.split_train_test()
+        assert raw_node.private_data == split_node.private_data
+        assert raw_node.private_test_data == split_node.private_test_data
+
+
+def test_split_train_test_pandas():
+    num_nodes = 10
+    data = pd.DataFrame(np.random.rand(10, num_nodes))
+    label = pd.Series(np.random.randint(range(0, 10), num_nodes))
 
     federated_data = FederatedData()
     for idx in range(num_nodes):

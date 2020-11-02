@@ -211,6 +211,7 @@ def federate_array(array, num_data_nodes):
     last = 0.0
     federated_array = FederatedData()
     while last < len(array):
+        print("first and last ", int(last), int(last + split_size))
         federated_array.add_data_node(array[int(last):int(last + split_size)])
         last = last + split_size
 

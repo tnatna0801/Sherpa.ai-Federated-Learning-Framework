@@ -2,6 +2,7 @@ import numpy as np
 import random
 import tensorflow as tf
 
+from shfl.data_base.data_base import shuffle_rows
 from shfl.data_distribution.data_distribution_sampling import SamplingDataDistribution
 
 
@@ -61,7 +62,8 @@ class NonIidDataDistribution(SamplingDataDistribution):
             sampling: methodology between with or without sampling (default "without_sampling")
 
         # Returns:
-              * **federated_data, federated_labels**
+            federated_data: A list containing the data for each client
+            federated_label: A list containing the labels for each client
         """
         if weights is None:
             weights = np.full(num_nodes, 1/num_nodes)
@@ -74,13 +76,10 @@ class NonIidDataDistribution(SamplingDataDistribution):
             one_hot = True
 
         # Shuffle data
-        randomize = np.arange(len(labels))
-        np.random.shuffle(randomize)
-        data = data[randomize, ]
-        labels = labels[randomize]
+        data, labels = shuffle_rows(data, labels)
 
         # Select percent
-        data = data[0:int(percent * len(data) / 100), ]
+        data = data[0:int(percent * len(data) / 100)]
         labels = labels[0:int(percent * len(labels) / 100)]
 
         # We generate random classes for each client
@@ -98,18 +97,13 @@ class NonIidDataDistribution(SamplingDataDistribution):
                 data_aux = data[idx]
                 labels_aux = labels[idx]
 
-                randomize = np.arange(len(labels_aux))
-                np.random.shuffle(randomize)
-                data_aux = data_aux[randomize, ]
-                labels_aux = labels_aux[randomize]
+                # Shuffle data
+                data_aux, labels_aux = shuffle_rows(data_aux, labels_aux)
 
                 percent_per_client = min(int(weights[i]*len(data)), len(data_aux))
 
                 federated_data.append(np.array(data_aux[0:percent_per_client, ]))
                 federated_label.append(np.array(labels_aux[0:percent_per_client, ]))
-
-            federated_data = np.array(federated_data)
-            federated_label = np.array(federated_label)
 
         else:
             if sum(weights) > 1:
@@ -138,9 +132,6 @@ class NonIidDataDistribution(SamplingDataDistribution):
 
                 data = rest_data
                 labels = rest_labels
-
-            federated_data = np.array(federated_data)
-            federated_label = np.array(federated_label)
 
         if not one_hot:
             federated_label = np.array([np.argmax(node, 1) for node in federated_label])

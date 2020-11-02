@@ -14,9 +14,10 @@ def test_linear_classifier_model_initialization_binary_classes():
     classes = ['a', 'b']
     lgr = LinearClassifierModel(n_features=n_features, classes=classes)
     n_classes = 1 # Binary classification
-    assert np.shape(lgr._model.intercept_) == (n_classes,)
-    assert np.shape(lgr._model.coef_) == (n_classes, n_features)
-    assert np.shape(lgr.get_model_params()) == (n_classes, n_features + 1)
+    assert np.shape(lgr._model.intercept_) == \
+           np.shape(lgr.get_model_params()[0]) == (n_classes,)
+    assert np.shape(lgr._model.coef_) == \
+           np.shape(lgr.get_model_params()[1]) == (n_classes, n_features)
     assert np.array_equal(classes, lgr._model.classes_)
 
 
@@ -25,9 +26,10 @@ def test_linear_classifier_model_initialization_multiple_classes():
     classes = ['a', 'b', 'c']
     lgr = LinearClassifierModel(n_features=n_features, classes=classes)
     n_classes = len(classes)
-    assert np.shape(lgr._model.intercept_) == (n_classes,)
-    assert np.shape(lgr._model.coef_) == (n_classes, n_features)
-    assert np.shape(lgr.get_model_params()) == (n_classes, n_features + 1)
+    assert np.shape(lgr._model.intercept_) == \
+           np.shape(lgr.get_model_params()[0]) == (n_classes,)
+    assert np.shape(lgr._model.coef_) == \
+           np.shape(lgr.get_model_params()[1]) == (n_classes, n_features)
     assert np.array_equal(classes, lgr._model.classes_)
 
     
@@ -79,10 +81,12 @@ def test_linear_classifier_model_set_get_params():
     n_features = 9
     classes = ['a', 'b', 'c']
     lgr = LinearClassifierModel(n_features=n_features, classes=classes)
-    params = np.random.rand(len(classes), n_features)
-    lgr.set_model_params(params)
+    intercept = np.random.rand(len(classes))
+    coefficients = np.random.rand(len(classes), n_features)
+    lgr.set_model_params([intercept, coefficients])
     
-    assert np.array_equal(lgr.get_model_params(), params)
+    assert np.array_equal(lgr.get_model_params()[0], intercept)
+    assert np.array_equal(lgr.get_model_params()[1], coefficients)
            
 
 def test_logistic_regression_model_train_evaluate():
@@ -108,7 +112,8 @@ def test_logistic_regression_model_train_evaluate():
     lgr_ref = LogisticRegression(max_iter=150).fit(train_data, train_labels)
     prediction_ref = lgr_ref.predict(test_data)
     
-    assert np.array_equal(model_params, np.column_stack((lgr_ref.intercept_, lgr_ref.coef_)))
+    assert np.array_equal(model_params[0], lgr_ref.intercept_)
+    assert np.array_equal(model_params[1], lgr_ref.coef_)
     assert np.array_equal(prediction, prediction_ref)
     assert np.array_equal(evaluation, np.array((metrics.balanced_accuracy_score(test_labels, prediction_ref),\
                                                metrics.cohen_kappa_score(test_labels, prediction_ref))))
@@ -138,8 +143,9 @@ def test_linearSVC_model_train_evaluate():
     svc_ref = LinearSVC(random_state=123).fit(train_data, train_labels)
     prediction_ref = svc_ref.predict(test_data)
     
-    assert np.array_equal(model_params, np.column_stack((svc_ref.intercept_, svc_ref.coef_)))
+    assert np.array_equal(model_params[0], svc_ref.intercept_)
+    assert np.array_equal(model_params[1], svc_ref.coef_)
     assert np.array_equal(prediction, prediction_ref)
-    assert np.array_equal(evaluation, np.array((metrics.balanced_accuracy_score(test_labels, prediction_ref),\
-                                               metrics.cohen_kappa_score(test_labels, prediction_ref))))
+    assert np.array_equal(evaluation, np.array((metrics.balanced_accuracy_score(test_labels, prediction_ref),
+                                                metrics.cohen_kappa_score(test_labels, prediction_ref))))
     assert performance == metrics.balanced_accuracy_score(test_labels, prediction_ref)

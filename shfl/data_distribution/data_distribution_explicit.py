@@ -1,5 +1,7 @@
 import numpy as np
+import pandas as pd
 
+from shfl.data_base.data_base import shuffle_rows
 from shfl.data_distribution.data_distribution import DataDistribution
 
 
@@ -9,6 +11,7 @@ class ExplicitDataDistribution(DataDistribution):
         [Data Distribution](../data_distribution/#datadistribution-class)
 
     In this data distribution we assume that the first column in the data determines the node it belongs to.
+    The data and labels may be numpy arrays or pandas dataframe/series.
     """
 
     def make_data_federated(self, data, labels, percent, *args, **kwargs):
@@ -23,23 +26,24 @@ class ExplicitDataDistribution(DataDistribution):
         # Returns:
               * **federated_data, federated_labels**
         """
-
         # Shuffle data
-        randomize = np.arange(len(labels))
-        np.random.shuffle(randomize)
-        data = data[randomize, ]
-        labels = labels[randomize]
+        data, labels = shuffle_rows(data, labels)
 
         # Select percent
-        data = data[0:int(percent * len(data) / 100), ]
+        data = data[0:int(percent * len(data) / 100)]
         labels = labels[0:int(percent * len(labels) / 100)]
 
-        nodes = np.unique(data[:, 0])
+        nodes = np.unique(np.array(data)[:, 0])
 
-        federated_data = [data[data[:, 0] == user] for user in nodes]
-        federated_label = [labels[data[:, 0] == user] for user in nodes]
+        if isinstance(data, (pd.DataFrame, pd.Series)) and isinstance(labels, (pd.DataFrame, pd.Series)):
+            federated_data = [data[data.iloc[:, 0] == user] for user in nodes]
+            federated_label = [labels[data.iloc[:, 0] == user] for user in nodes]
 
-        federated_data = np.array(federated_data, dtype=object)
-        federated_label = np.array(federated_label, dtype=object)
+        elif isinstance(data, np.ndarray) and isinstance(labels, np.ndarray):
+            federated_data = [data[data[:, 0] == user] for user in nodes]
+            federated_label = [labels[data[:, 0] == user] for user in nodes]
+
+            federated_data = np.array(federated_data)
+            federated_label = np.array(federated_label)
 
         return federated_data, federated_label

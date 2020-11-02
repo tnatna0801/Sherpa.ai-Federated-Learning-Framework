@@ -1,28 +1,49 @@
 import abc
 import numpy as np
+import pandas as pd
+
+
+def shuffle_rows(data, labels):
+    """
+    Shuffles rows in two data structures simultaneously.
+    It supports either pd.DataFrame/pd.Series or numpy arrays.
+    """
+    randomize = np.arange(len(labels))
+    np.random.shuffle(randomize)
+
+    if isinstance(data, (pd.DataFrame, pd.Series)) and isinstance(labels, (pd.DataFrame, pd.Series)):
+        data = data.iloc[randomize]
+        labels = labels.iloc[randomize]
+
+    elif isinstance(data, np.ndarray) and isinstance(labels, np.ndarray):
+        data = data[randomize, ]
+        labels = labels[randomize]
+
+    else:
+        raise TypeError("Data and labels must be either pd.DataFrame/pd.Series or numpy arrays.")
+
+    return data, labels
 
 
 def split_train_test(data, labels, dim):
     """
-    Method that randomly choose the train and test sets from data and labels.
+    Method that randomly chooses the train and test sets from data and labels.
 
     # Arguments:
-        data: Numpy matrix with data for extract the validation data
-        labels: Numpy array with labels
+        data: Data for extracting the validation data
+        labels: Array with labels
         dim: Size for validation data
 
     # Returns:
         new_data: Data, labels, validation data and validation labels
     """
-    randomize = np.arange(len(labels))
-    np.random.shuffle(randomize)
-    data = data[randomize, ]
-    labels = labels[randomize]
 
-    test_data = data[0:dim, ]
+    data, labels = shuffle_rows(data, labels)
+
+    test_data = data[0:dim]
     test_labels = labels[0:dim]
 
-    rest_data = data[dim:, ]
+    rest_data = data[dim:]
     rest_labels = labels[dim:]
 
     return rest_data, rest_labels, test_data, test_labels
@@ -75,15 +96,8 @@ class DataBase(abc.ABC):
         """
         Shuffles all data
         """
-        randomize = np.arange(len(self._train_labels))
-        np.random.shuffle(randomize)
-        self._train_data = self._train_data[randomize, ]
-        self._train_labels = self._train_labels[randomize]
-
-        randomize = np.arange(len(self._test_labels))
-        np.random.shuffle(randomize)
-        self._test_data = self._test_data[randomize, ]
-        self._test_labels = self._test_labels[randomize]
+        self._train_data, self._train_labels = shuffle_rows(self._train_data, self._train_labels)
+        self._test_data, self._test_labels = shuffle_rows(self._test_data, self._test_labels)
 
 
 class LabeledDatabase(DataBase):

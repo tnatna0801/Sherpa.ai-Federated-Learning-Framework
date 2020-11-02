@@ -11,6 +11,7 @@ from shfl.differential_privacy.dp_mechanism import RandomizedResponseCoins
 from shfl.differential_privacy.dp_mechanism import ExponentialMechanism
 from shfl.differential_privacy.dp_sampling import SampleWithoutReplacement
 
+
 def test_sample_without_replacement_multidimensional():
     array = np.ones((100, 2))
     sample_size = 50

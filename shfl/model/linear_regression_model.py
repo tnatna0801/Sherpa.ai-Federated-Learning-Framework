@@ -18,7 +18,7 @@ class LinearRegressionModel(TrainableModel):
         self._model = LinearRegression()
         self._n_features = n_features
         self._n_targets = n_targets
-        self.set_model_params(np.zeros((n_targets, n_features + 1)))
+        self.set_model_params([np.zeros(n_targets), np.zeros((n_targets, n_features))])
         
     def train(self, data, labels):
         """
@@ -94,31 +94,18 @@ class LinearRegressionModel(TrainableModel):
 
     def get_model_params(self):
         """
-        Implementation of abstract method of class [TrainableModel](../model/#trainablemodel-class)
-
-        # Returns:
-            stack_params: array with all params stacked.
+        Implementation of abstract method of class [TrainableModel](../Model/#trainablemodel-class)
         """
-        if self._n_targets == 1:
-            stack_params = np.hstack((np.array(self._model.intercept_), self._model.coef_))
-            stack_params = stack_params.reshape(1, -1)
-        elif self._n_targets > 1:
-            stack_params = np.hstack((np.array(self._model.intercept_).reshape(-1, 1), self._model.coef_))
-        return stack_params
+        
+        return [self._model.intercept_, self._model.coef_]
 
     def set_model_params(self, params):
         """
-        Implementation of abstract method of class [TrainableModel](../model/#trainablemodel-class)
-
-        # Arguments:
-            params: representation of model params to assign
+        Implementation of abstract method of class [TrainableModel](../Model/#trainablemodel-class)
         """
-        if self._n_targets == 1:
-            self._model.intercept_ = params[0][0]               
-            self._model.coef_ = params[0][1:]
-        elif self._n_targets > 1:
-            self._model.intercept_ = params[:, 0]
-            self._model.coef_ = params[:, 1:]
+        
+        self._model.intercept_ = params[0]
+        self._model.coef_ = params[1]
             
     def _check_data(self, data):
         """

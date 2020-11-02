@@ -127,9 +127,10 @@ class DeepLearningModel(TrainableModel):
         for k, v in self.__dict__.items():
             if k == "_model":
                 model = tf.keras.models.clone_model(v)
-                model.compile(optimizer=v.optimizer.__class__.__name__, loss=v.loss,
+                config = v.optimizer.get_config()
+                cloned_opt = tf.keras.optimizers.get({"class_name": config['name'], "config": config })
+                model.compile(optimizer=cloned_opt, loss=v.loss,
                               metrics=v.compiled_metrics._user_metrics)
-
                 model.set_weights(v.get_weights())
                 setattr(result, k, model)
             else:

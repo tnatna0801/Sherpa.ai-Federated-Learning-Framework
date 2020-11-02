@@ -173,6 +173,7 @@ def test_federated_government_private_data():
     assert isinstance(la.global_model, model_builder)
     assert aggregator.id == la._aggregator.id
 
+
 def test_run_rounds():
     model_builder = Mock
     aggregator = Mock()

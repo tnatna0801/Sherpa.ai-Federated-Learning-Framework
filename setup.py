@@ -12,5 +12,5 @@ setup(name="shfl",
       url="https://github.com/sherpaai/Sherpa.ai-Federated-Learning-Framework",
       packages=find_packages(),
       install_requires=['numpy', 'emnist', 'scikit-learn>=0.23', 'pytest', 'tensorflow>=2.2.0', 'scipy', 'six', 'pathlib2',
-                        'pandas'],
+                        'pandas', 'multipledispatch'],
       python_requires='>=3.7')
