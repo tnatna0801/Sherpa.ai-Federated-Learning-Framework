@@ -1,5 +1,6 @@
 from sklearn.datasets import fetch_lfw_people
 from shfl.data_base import data_base as db
+from tensorflow.keras.utils import to_categorical
 
 
 class Lfw(db.DataBase):
@@ -18,7 +19,7 @@ class Lfw(db.DataBase):
         """
         all_data = fetch_lfw_people()
         data = all_data["images"]
-        labels = all_data["target"]
+        labels = to_categorical(all_data["target"])
 
         test_size = int(len(data) * 0.1)
         self._train_data, self._train_labels,\
