@@ -17,7 +17,7 @@ class Lfw(db.DataBase):
         # Returns
             all_data : train data, train labels, test data and test labels
         """
-        all_data = fetch_lfw_people()
+        all_data = fetch_lfw_people(color=True)
         data = all_data["images"]
         labels = to_categorical(all_data["target"])
 
